@@ -146,7 +146,7 @@ Function Convert-ProcessToJson {
 		[Parameter(Mandatory = $True, Position = 0)][System.Diagnostics.Process]$Process
 	)
 	Return [PSCustomObject]@{
-		command = $Process.Command
+		command = $Process.CommandLine
 		cpuTime = $Process.CPU ?? 0
 		handlesCount = ($Process.HandleCount ?? 0).ToString()
 		id = $Process.Id.ToString()
