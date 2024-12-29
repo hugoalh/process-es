@@ -5,9 +5,9 @@ import {
 } from "https://raw.githubusercontent.com/hugoalh/is-json-es/v1.0.4/mod.ts";
 export interface ProcessInfo {
 	/**
-	 * Command line that the process used to start.
+	 * Command line that the process used to start; Maybe unobtainable.
 	 */
-	command: string;
+	command: string | null;
 	/**
 	 * Amount of processor time that the process has used on all processors, in seconds.
 	 */
@@ -57,9 +57,9 @@ export interface ProcessInfo {
 	 */
 	parent: ProcessInfo | null;
 	/**
-	 * Path of the executable file of the process.
+	 * Path of the executable file of the process; Maybe unobtainable.
 	 */
-	path: string;
+	path: string | null;
 	/**
 	 * Priority of the process.
 	 */
@@ -185,6 +185,15 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 	for (const key of Object.keys(entity)) {
 		switch (key) {
 			case "command":
+			case "path":
+			case "version":
+				if (!(
+					typeof entity[key] === "string" ||
+					entity[key] === null
+				)) {
+					throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
+				}
+				break;
 			case "handlesCount":
 			case "id":
 			case "memoryNonPagedSystem":
@@ -195,7 +204,6 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 			case "memoryVirtual":
 			case "memoryVirtualPeak":
 			case "name":
-			case "path":
 			case "timeStarted":
 			case "workingSet":
 			case "workingSetMaximum":
@@ -214,14 +222,6 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 				break;
 			case "parent":
 				// Check with recursive.
-				break;
-			case "version":
-				if (!(
-					typeof entity.version === "string" ||
-					entity.version === null
-				)) {
-					throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.version\`.`);
-				}
 				break;
 			default:
 				throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
