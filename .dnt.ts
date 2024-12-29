@@ -10,6 +10,12 @@ await invokeDenoNodeJSTransformer({
 	],
 	entrypoints: configJSR.getExports(),
 	generateDeclarationMap: true,
+	mappings: {
+		"https://raw.githubusercontent.com/hugoalh/is-json-es/v1.0.4/mod.ts": {
+			name: "@hugoalh/is-json",
+			version: "^1.0.4"
+		}
+	},
 	metadata: {
 		name: configJSR.getName(),
 		version: configJSR.getVersion(),
