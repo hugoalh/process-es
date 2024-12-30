@@ -6,3 +6,10 @@ Deno.test("Main", {
 }, async () => {
 	console.log(await getProcessInfo());
 });
+Deno.test("Self", {
+	permissions: {
+		run: ["pwsh"]
+	}
+}, async () => {
+	console.log(await getProcessInfo(["deno", "pwsh"]));
+});
