@@ -21,7 +21,7 @@ export async function killProcess(param0: number | string | readonly (number | s
 		} else if (typeof input === "string") {
 			let processes: ProcessInfo[] = [];
 			try {
-				processes = await getProcessInfo(input, options);
+				processes = (await getProcessInfo(input, options)).results;
 			} catch (error) {
 				fails.push(error as Error);
 			}
@@ -54,7 +54,7 @@ export function killProcessSync(param0: number | string | readonly (number | str
 		} else if (typeof input === "string") {
 			let processes: ProcessInfo[] = [];
 			try {
-				processes = getProcessInfoSync(input, options);
+				processes = getProcessInfoSync(input, options).results;
 			} catch (error) {
 				fails.push(error as Error);
 			}

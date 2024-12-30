@@ -1,19 +1,20 @@
 import {
 	isJSONArray,
 	isJSONObject,
+	type JSONArray,
 	type JSONValue
 } from "https://raw.githubusercontent.com/hugoalh/is-json-es/v1.0.4/mod.ts";
 export interface ProcessInfo {
 	/**
-	 * Command line that the process used to start; Maybe unobtainable.
+	 * Command line that the process used to start; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	command: string | null;
 	/**
-	 * Amount of processor time that the process has used on all processors, in seconds.
+	 * Amount of processor time that the process has used on all processors, in seconds; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	cpuTime: number;
 	/**
-	 * Number of handles opened by the process.
+	 * Number of handles opened by the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	handlesCount: number;
 	/**
@@ -21,31 +22,31 @@ export interface ProcessInfo {
 	 */
 	id: number;
 	/**
-	 * Amount of non paged system memory of the process, in bytes.
+	 * Amount of non paged system memory of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	memoryNonPagedSystem: bigint;
 	/**
-	 * Amount of paged memory of the process, in bytes.
+	 * Amount of paged memory of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	memoryPaged: bigint;
 	/**
-	 * Peak amount of paged memory of the process, in bytes.
+	 * Peak amount of paged memory of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	memoryPagedPeak: bigint;
 	/**
-	 * Amount of paged system memory of the process, in bytes.
+	 * Amount of paged system memory of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	memoryPagedSystem: bigint;
 	/**
-	 * Amount of private memory of the process, in bytes.
+	 * Amount of private memory of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	memoryPrivate: bigint;
 	/**
-	 * Amount of virtual memory of the process, in bytes.
+	 * Amount of virtual memory of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	memoryVirtual: bigint;
 	/**
-	 * Peak amount of virtual memory of the process, in bytes.
+	 * Peak amount of virtual memory of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	memoryVirtualPeak: bigint;
 	/**
@@ -53,52 +54,70 @@ export interface ProcessInfo {
 	 */
 	name: string;
 	/**
-	 * Parent process of the process.
+	 * ID of the parent process of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
-	parent: ProcessInfo | null;
+	parentID: number | null;
 	/**
-	 * Path of the executable file of the process; Maybe unobtainable.
+	 * Path of the executable file of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	path: string | null;
 	/**
-	 * Priority of the process.
+	 * Priority of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	priority: number;
 	/**
-	 * Base priority of the process.
+	 * Base priority of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	priorityBase: number;
 	/**
-	 * The started time of the process.
+	 * The started time of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
-	timeStarted: Date;
+	timeStarted: Date | null;
 	/**
-	 * Version number of the process; Maybe not defined.
+	 * Version number of the process; Maybe not defined, or not available due to the platform restriction or require privilege permission.
 	 */
 	version: string | null;
 	/**
-	 * Size of the working set of the process, in bytes.
+	 * Size of the working set of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	workingSet: bigint;
 	/**
-	 * Maximum size of working set of the process, in bytes.
+	 * Maximum size of working set of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	workingSetMaximum: bigint;
 	/**
-	 * Minimum size of working set of the process, in bytes.
+	 * Minimum size of working set of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	workingSetMinimum: bigint;
 	/**
-	 * Peak size of working set of the process, in bytes.
+	 * Peak size of working set of the process, in bytes; Maybe not available due to the platform restriction or require privilege permission.
 	 */
 	workingSetPeak: bigint;
 }
 export interface ProcessGetInfoOptions {
 	/**
+	 * Maximum depth of the parent processes should be walked recursively.
+	 * @default {Infinity}
+	 */
+	depth?: number;
+	/**
 	 * Specify the path of the PowerShell executable. By default, this looks for `pwsh` in the environment variable `PATH`.
 	 * @default {"pwsh"}
 	 */
 	powershellPath?: string | URL;
+}
+/**
+ * Result return from {@linkcode getProcessInfo} or {@linkcode getProcessInfoSync}.
+ */
+export interface ProcessGetInfoResult {
+	/**
+	 * Parent processes of the parent processes or result processes. Maybe duplicated in the property {@linkcode results} when the process match the filters.
+	 */
+	parents: ProcessInfo[];
+	/**
+	 * Result processes which match the filters.
+	 */
+	results: ProcessInfo[];
 }
 function resolvePSProcessCommand(param0?: number | string | readonly number[] | readonly string[] | ProcessGetInfoOptions, param1?: ProcessGetInfoOptions): Deno.Command {
 	let filters: readonly (number | string)[];
@@ -116,7 +135,13 @@ function resolvePSProcessCommand(param0?: number | string | readonly number[] | 
 		filters = [];
 		options = param0 as ProcessGetInfoOptions | undefined ?? {};
 	}
-	const { powershellPath = "pwsh" }: ProcessGetInfoOptions = options;
+	const {
+		depth = Infinity,
+		powershellPath = "pwsh"
+	}: ProcessGetInfoOptions = options;
+	if (depth !== Infinity && !(Number.isSafeInteger(depth) && depth >= 0)) {
+		throw new RangeError(`Parameter \`options.depth\` is not \`Infinity\`, or a number which is integer, positive, and safe!`);
+	}
 	const commandGPS: string[] = ["Get-Process"];
 	if (filters.length > 0) {
 		if (filters.every((filter: number | string): filter is number => {
@@ -140,6 +165,9 @@ function resolvePSProcessCommand(param0?: number | string | readonly number[] | 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $WarningPreference = 'SilentlyContinue'
+[UInt32]$Depth = ${(depth === Infinity) ? "[UInt32]::MaxValue" : String(depth)}
+[PSCustomObject[]]$Parents = @()
+[PSCustomObject[]]$Results = @()
 Function Convert-ProcessToJson {
 	[OutputType([PSCustomObject])]
 	Param (
@@ -158,10 +186,10 @@ Function Convert-ProcessToJson {
 		memoryVirtual = ($Process.VirtualMemorySize64 ?? 0).ToString()
 		memoryVirtualPeak = ($Process.PeakVirtualMemorySize64 ?? 0).ToString()
 		name = $Process.Name
-		parent = ($Null -eq $Process.Parent) ? $Null : (Convert-ProcessToJson -Process $Process.Parent)
+		parent = $Process.Parent
 		path = $Process.Path
-		priority = $Process.PriorityClass
-		priorityBase = $Process.BasePriority
+		priority = $Process.PriorityClass ?? 0
+		priorityBase = $Process.BasePriority ?? 0
 		timeStarted = $Process.StartTime
 		version = $Process.FileVersion
 		workingSet = ($Process.WorkingSet64 ?? 0).ToString()
@@ -170,11 +198,30 @@ Function Convert-ProcessToJson {
 		workingSetPeak = ($Process.PeakWorkingSet64 ?? 0).ToString()
 	}
 }
-[PSCustomObject[]]$Result = @()
 ForEach ($Process In (${commandGPS.join(" ")})) {
-	$Result += Convert-ProcessToJson -Process $Process
+	[PSCustomObject]$Result = Convert-ProcessToJson -Process $Process
+	$Parent = $Result.Parent
+	If ($Null -ne $Parent) {
+		$Result.Parent = $Parent.Id.ToString()
+	}
+	$Results += $Result
+	[UInt32]$DepthCurrent = 0
+	While ($Null -ne $Parent -and $DepthCurrent -lt $Depth) {
+		$DepthCurrent += 1
+		$Result = Convert-ProcessToJson -Process $Parent
+		$Parent = $Result.Parent
+		If ($Null -ne $Parent) {
+			$Result.Parent = $Parent.Id.ToString()
+		}
+		If ($Parents.id -notcontains $Result.id) {
+			$Parents += $Result
+		}
+	}
 }
-Write-Host -Object (ConvertTo-Json -InputObject $Result -Depth 100 -Compress)
+Write-Host -Object (ConvertTo-Json -InputObject ([PSCustomObject]@{
+	parents = $Parents
+	results = $Results
+}) -Depth 100 -Compress)
 `);
 	return new Deno.Command(powershellPath, { args });
 }
@@ -185,7 +232,9 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 	for (const key of Object.keys(entity)) {
 		switch (key) {
 			case "command":
+			case "parent":
 			case "path":
+			case "timeStarted":
 			case "version":
 				if (!(
 					typeof entity[key] === "string" ||
@@ -204,7 +253,6 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 			case "memoryVirtual":
 			case "memoryVirtualPeak":
 			case "name":
-			case "timeStarted":
 			case "workingSet":
 			case "workingSetMaximum":
 			case "workingSetMinimum":
@@ -219,9 +267,6 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 				if (typeof entity[key] !== "number") {
 					throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
 				}
-				break;
-			case "parent":
-				// Check with recursive.
 				break;
 			default:
 				throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
@@ -240,11 +285,11 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 		memoryVirtual: BigInt(entity.memoryVirtual as string),
 		memoryVirtualPeak: BigInt(entity.memoryVirtualPeak as string),
 		name: entity.name as string,
-		parent: (entity.parent === null) ? null : mapPSProcessInfo(`${parameterName}.parent`, entity.parent),
-		path: entity.path as string,
+		parentID: (entity.parent === null) ? null : Number.parseInt(entity.parent as string, 10),
+		path: entity.path as string | null,
 		priority: entity.priority as number,
 		priorityBase: entity.priorityBase as number,
-		timeStarted: new Date(entity.timeStarted as string),
+		timeStarted: (entity.timeStarted === null) ? null : new Date(entity.timeStarted as string),
 		version: entity.version as string | null,
 		workingSet: BigInt(entity.workingSet as string),
 		workingSetMaximum: BigInt(entity.workingSetMaximum as string),
@@ -252,7 +297,7 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 		workingSetPeak: BigInt(entity.workingSetPeak as string)
 	};
 }
-function resolvePSProcessInfo(commandOutput: Deno.CommandOutput): ProcessInfo[] {
+function resolvePSProcessInfo(commandOutput: Deno.CommandOutput): ProcessGetInfoResult {
 	const {
 		code,
 		stderr,
@@ -269,12 +314,29 @@ function resolvePSProcessInfo(commandOutput: Deno.CommandOutput): ProcessInfo[] 
 	} catch (error) {
 		throw new Error(`Unable to get the process info: ${error}`);
 	}
-	if (!isJSONArray(raw)) {
+	if (!isJSONObject(raw)) {
 		throw new Error(`Unable to get the process info: Invalid subprocess output.`);
 	}
-	return raw.map((entity: JSONValue, index: number): ProcessInfo => {
-		return mapPSProcessInfo(`[${index}]`, entity);
-	});
+	for (const key of Object.keys(raw)) {
+		switch (key) {
+			case "parents":
+			case "results":
+				if (!isJSONArray(raw[key])) {
+					throw new Error(`Unable to get the process info: Invalid subprocess output \`${key}\`.`);
+				}
+				break;
+			default:
+				throw new Error(`Unable to get the process info: Invalid subprocess output \`${key}\`.`);
+		}
+	}
+	return {
+		parents: (raw.parents as JSONArray).map((parent: JSONValue, index: number): ProcessInfo => {
+			return mapPSProcessInfo(`parents[${index}]`, parent);
+		}),
+		results: (raw.results as JSONArray).map((result: JSONValue, index: number): ProcessInfo => {
+			return mapPSProcessInfo(`results[${index}]`, result);
+		})
+	};
 }
 /**
  * Get the info of the processes, asynchronously.
@@ -284,9 +346,9 @@ function resolvePSProcessInfo(commandOutput: Deno.CommandOutput): ProcessInfo[] 
  * > - Subprocesses \[Deno: `run`\]
  * >   - `pwsh`
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {Promise<ProcessInfo[]>} Info of the processes.
+ * @returns {Promise<ProcessGetInfoResult>} Result.
  */
-export async function getProcessInfo(options?: ProcessGetInfoOptions): Promise<ProcessInfo[]>;
+export async function getProcessInfo(options?: ProcessGetInfoOptions): Promise<ProcessGetInfoResult>;
 /**
  * Get the info of the processes, asynchronously.
  * 
@@ -296,9 +358,9 @@ export async function getProcessInfo(options?: ProcessGetInfoOptions): Promise<P
  * >   - `pwsh`
  * @param {number} id ID of the process.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {Promise<ProcessInfo[]>} Info of the processes.
+ * @returns {Promise<ProcessGetInfoResult>} Result.
  */
-export async function getProcessInfo(id: number, options?: ProcessGetInfoOptions): Promise<ProcessInfo[]>;
+export async function getProcessInfo(id: number, options?: ProcessGetInfoOptions): Promise<ProcessGetInfoResult>;
 /**
  * Get the info of the processes, asynchronously.
  * 
@@ -308,9 +370,9 @@ export async function getProcessInfo(id: number, options?: ProcessGetInfoOptions
  * >   - `pwsh`
  * @param {readonly number[]} ids ID of the processes.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {Promise<ProcessInfo[]>} Info of the processes.
+ * @returns {Promise<ProcessGetInfoResult>} Result.
  */
-export async function getProcessInfo(ids: readonly number[], options?: ProcessGetInfoOptions): Promise<ProcessInfo[]>;
+export async function getProcessInfo(ids: readonly number[], options?: ProcessGetInfoOptions): Promise<ProcessGetInfoResult>;
 /**
  * Get the info of the processes, asynchronously.
  * 
@@ -320,9 +382,9 @@ export async function getProcessInfo(ids: readonly number[], options?: ProcessGe
  * >   - `pwsh`
  * @param {string} name Name of the process; Support PowerShell wildcard characters.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {Promise<ProcessInfo[]>} Info of the processes.
+ * @returns {Promise<ProcessGetInfoResult>} Result.
  */
-export async function getProcessInfo(name: string, options?: ProcessGetInfoOptions): Promise<ProcessInfo[]>;
+export async function getProcessInfo(name: string, options?: ProcessGetInfoOptions): Promise<ProcessGetInfoResult>;
 /**
  * Get the info of the processes, asynchronously.
  * 
@@ -332,10 +394,10 @@ export async function getProcessInfo(name: string, options?: ProcessGetInfoOptio
  * >   - `pwsh`
  * @param {readonly string[]} names Name of the processes; Support PowerShell wildcard characters.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {Promise<ProcessInfo[]>} Info of the processes.
+ * @returns {Promise<ProcessGetInfoResult>} Result.
  */
-export async function getProcessInfo(names: readonly string[], options?: ProcessGetInfoOptions): Promise<ProcessInfo[]>;
-export async function getProcessInfo(param0?: number | string | readonly number[] | readonly string[] | ProcessGetInfoOptions, param1?: ProcessGetInfoOptions): Promise<ProcessInfo[]> {
+export async function getProcessInfo(names: readonly string[], options?: ProcessGetInfoOptions): Promise<ProcessGetInfoResult>;
+export async function getProcessInfo(param0?: number | string | readonly number[] | readonly string[] | ProcessGetInfoOptions, param1?: ProcessGetInfoOptions): Promise<ProcessGetInfoResult> {
 	return resolvePSProcessInfo(await resolvePSProcessCommand(param0, param1).output());
 }
 /**
@@ -346,9 +408,9 @@ export async function getProcessInfo(param0?: number | string | readonly number[
  * > - Subprocesses \[Deno: `run`\]
  * >   - `pwsh`
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {ProcessInfo[]} Info of the processes.
+ * @returns {ProcessGetInfoResult} Result.
  */
-export function getProcessInfoSync(options?: ProcessGetInfoOptions): ProcessInfo[];
+export function getProcessInfoSync(options?: ProcessGetInfoOptions): ProcessGetInfoResult;
 /**
  * Get the info of the processes, synchronously.
  * 
@@ -358,9 +420,9 @@ export function getProcessInfoSync(options?: ProcessGetInfoOptions): ProcessInfo
  * >   - `pwsh`
  * @param {number} id ID of the process.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {ProcessInfo[]} Info of the processes.
+ * @returns {ProcessGetInfoResult} Result.
  */
-export function getProcessInfoSync(id: number, options?: ProcessGetInfoOptions): ProcessInfo[];
+export function getProcessInfoSync(id: number, options?: ProcessGetInfoOptions): ProcessGetInfoResult;
 /**
  * Get the info of the processes, synchronously.
  * 
@@ -370,9 +432,9 @@ export function getProcessInfoSync(id: number, options?: ProcessGetInfoOptions):
  * >   - `pwsh`
  * @param {readonly number[]} ids ID of the processes.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {ProcessInfo[]} Info of the processes.
+ * @returns {ProcessGetInfoResult} Result.
  */
-export function getProcessInfoSync(ids: readonly number[], options?: ProcessGetInfoOptions): ProcessInfo[];
+export function getProcessInfoSync(ids: readonly number[], options?: ProcessGetInfoOptions): ProcessGetInfoResult;
 /**
  * Get the info of the processes, synchronously.
  * 
@@ -382,9 +444,9 @@ export function getProcessInfoSync(ids: readonly number[], options?: ProcessGetI
  * >   - `pwsh`
  * @param {string} name Name of the process; Support PowerShell wildcard characters.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {ProcessInfo[]} Info of the processes.
+ * @returns {ProcessGetInfoResult} Result.
  */
-export function getProcessInfoSync(name: string, options?: ProcessGetInfoOptions): ProcessInfo[];
+export function getProcessInfoSync(name: string, options?: ProcessGetInfoOptions): ProcessGetInfoResult;
 /**
  * Get the info of the processes, synchronously.
  * 
@@ -394,9 +456,9 @@ export function getProcessInfoSync(name: string, options?: ProcessGetInfoOptions
  * >   - `pwsh`
  * @param {readonly string[]} names Name of the processes; Support PowerShell wildcard characters.
  * @param {ProcessGetInfoOptions} [options={}] Options.
- * @returns {ProcessInfo[]} Info of the processes.
+ * @returns {ProcessGetInfoResult} Result.
  */
-export function getProcessInfoSync(names: readonly string[], options?: ProcessGetInfoOptions): ProcessInfo[];
-export function getProcessInfoSync(param0?: number | string | readonly number[] | readonly string[] | ProcessGetInfoOptions, param1?: ProcessGetInfoOptions): ProcessInfo[] {
+export function getProcessInfoSync(names: readonly string[], options?: ProcessGetInfoOptions): ProcessGetInfoResult;
+export function getProcessInfoSync(param0?: number | string | readonly number[] | readonly string[] | ProcessGetInfoOptions, param1?: ProcessGetInfoOptions): ProcessGetInfoResult {
 	return resolvePSProcessInfo(resolvePSProcessCommand(param0, param1).outputSync());
 }
