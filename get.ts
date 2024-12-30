@@ -64,11 +64,11 @@ export interface ProcessInfo {
 	/**
 	 * Priority of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
-	priority: number;
+	priority: number | null;
 	/**
 	 * Base priority of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
-	priorityBase: number;
+	priorityBase: number | null;
 	/**
 	 * The started time of the process; Maybe not available due to the platform restriction or require privilege permission.
 	 */
@@ -188,8 +188,8 @@ Function Convert-ProcessToJson {
 		name = $Process.Name
 		parent = $Process.Parent
 		path = $Process.Path
-		priority = $Process.PriorityClass ?? 0
-		priorityBase = $Process.BasePriority ?? 0
+		priority = $Process.PriorityClass
+		priorityBase = $Process.BasePriority
 		timeStarted = $Process.StartTime
 		version = $Process.FileVersion
 		workingSet = ($Process.WorkingSet64 ?? 0).ToString()
@@ -243,6 +243,11 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 					throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
 				}
 				break;
+			case "cpuTime":
+				if (typeof entity[key] !== "number") {
+					throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
+				}
+				break;
 			case "handlesCount":
 			case "id":
 			case "memoryNonPagedSystem":
@@ -261,10 +266,12 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 					throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
 				}
 				break;
-			case "cpuTime":
 			case "priority":
 			case "priorityBase":
-				if (typeof entity[key] !== "number") {
+				if (!(
+					typeof entity[key] === "number" ||
+					entity[key] === null
+				)) {
 					throw new Error(`Unable to get the process info: Invalid subprocess output \`${parameterName}.${key}\`.`);
 				}
 				break;
@@ -273,7 +280,7 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 		}
 	}
 	return {
-		command: entity.command as string,
+		command: entity.command as string | null,
 		cpuTime: entity.cpuTime as number,
 		handlesCount: Number.parseInt(entity.handlesCount as string, 10),
 		id: Number.parseInt(entity.id as string, 10),
@@ -287,8 +294,8 @@ function mapPSProcessInfo(parameterName: string, entity: JSONValue): ProcessInfo
 		name: entity.name as string,
 		parentID: (entity.parent === null) ? null : Number.parseInt(entity.parent as string, 10),
 		path: entity.path as string | null,
-		priority: entity.priority as number,
-		priorityBase: entity.priorityBase as number,
+		priority: entity.priority as number | null,
+		priorityBase: entity.priorityBase as number | null,
 		timeStarted: (entity.timeStarted === null) ? null : new Date(entity.timeStarted as string),
 		version: entity.version as string | null,
 		workingSet: BigInt(entity.workingSet as string),
