@@ -1,18 +1,8 @@
-import {
-	getProcessInfo,
-	getProcessInfoSync
-} from "./get.ts";
-Deno.test("Async", {
+import { getProcessInfo } from "./get.ts";
+Deno.test("Main", {
 	permissions: {
 		run: ["pwsh"]
 	}
 }, async () => {
 	console.log(await getProcessInfo());
-});
-Deno.test("Sync", {
-	permissions: {
-		run: ["pwsh"]
-	}
-}, () => {
-	console.log(getProcessInfoSync());
 });
