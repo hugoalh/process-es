@@ -115,6 +115,10 @@ export interface ProcessGetInfoResult {
 	 */
 	parents: ProcessInfo[];
 	/**
+	 * Process ID of the PowerShell, which should ended before the result return.
+	 */
+	powershellID: number;
+	/**
 	 * Result processes which match the filters.
 	 */
 	results: ProcessInfo[];
@@ -220,6 +224,7 @@ ForEach ($Process In (${commandGPS.join(" ")})) {
 }
 Write-Host -Object (ConvertTo-Json -InputObject ([PSCustomObject]@{
 	parents = $Parents
+	powershellID = $PID
 	results = $Results
 }) -Depth 100 -Compress)
 `);
@@ -332,6 +337,11 @@ function resolvePSProcessInfo(commandOutput: Deno.CommandOutput): ProcessGetInfo
 					throw new Error(`Unable to get the process info: Invalid subprocess output \`${key}\`.`);
 				}
 				break;
+			case "powershellID":
+				if (typeof raw[key] !== "number") {
+					throw new Error(`Unable to get the process info: Invalid subprocess output \`${key}\`.`);
+				}
+				break;
 			default:
 				throw new Error(`Unable to get the process info: Invalid subprocess output \`${key}\`.`);
 		}
@@ -340,6 +350,7 @@ function resolvePSProcessInfo(commandOutput: Deno.CommandOutput): ProcessGetInfo
 		parents: (raw.parents as JSONArray).map((parent: JSONValue, index: number): ProcessInfo => {
 			return mapPSProcessInfo(`parents[${index}]`, parent);
 		}),
+		powershellID: raw.powershellID as number,
 		results: (raw.results as JSONArray).map((result: JSONValue, index: number): ProcessInfo => {
 			return mapPSProcessInfo(`results[${index}]`, result);
 		})
