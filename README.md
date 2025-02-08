@@ -21,6 +21,10 @@ An ES (JavaScript & TypeScript) module for enhanced process operation.
 > [!NOTE]
 > - It is possible to use this module in other methods/ways which not listed in here, however those methods/ways are not officially supported, and should beware maybe cause security issues.
 
+### 💽 External Dependencies
+
+- [PowerShell (Core)](https://github.com/PowerShell/PowerShell)
+
 ### #️⃣ Resources Identifier
 
 - **Remote - GitHub Raw:**
