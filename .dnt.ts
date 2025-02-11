@@ -9,6 +9,7 @@ await invokeDenoNodeJSTransformer({
 		"README.md"
 	],
 	entrypoints: configJSR.getExports(),
+	fixInjectedImports: true,
 	generateDeclarationMap: true,
 	mappings: {
 		"https://raw.githubusercontent.com/hugoalh/is-json-es/v1.0.4/mod.ts": {
