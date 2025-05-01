@@ -6,7 +6,7 @@
 [![JSR: @hugoalh/process](https://img.shields.io/jsr/v/@hugoalh/process?label=@hugoalh/process&labelColor=F7DF1E&logo=jsr&logoColor=000000&style=flat "JSR: @hugoalh/process")](https://jsr.io/@hugoalh/process)
 [![NPM: @hugoalh/process](https://img.shields.io/npm/v/@hugoalh/process?label=@hugoalh/process&labelColor=CB3837&logo=npm&logoColor=ffffff&style=flat "NPM: @hugoalh/process")](https://www.npmjs.com/package/@hugoalh/process)
 
-An ES (JavaScript & TypeScript) module for enhanced process operation.
+An ECMAScript (JavaScript & TypeScript) module for enhanced process operation.
 
 ## 🔰 Begin
 
