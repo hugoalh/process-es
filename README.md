@@ -53,7 +53,7 @@ An ECMAScript (JavaScript & TypeScript) module for enhanced process operation.
 
 ### 🛡️ Runtime Permissions
 
-- Subprocesses \[Deno: `run`\]
+- **Subprocesses (Deno: `run`):**
   - `pwsh` (Optional)
   - *Resources* (Optional)
 
